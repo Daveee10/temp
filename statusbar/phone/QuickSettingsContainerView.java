@@ -53,8 +53,8 @@ public class QuickSettingsContainerView extends FrameLayout {
 
     void updateResources() {
         Resources r = getContext().getResources();
-        mCellGap = r.getDimension(R.dimen.quicktile_cell_gap);
-        mNumColumns = r.getInteger(R.integer.quicktile_num_columns);
+        mCellGap = r.getDimension(R.dimen.quick_settings_cell_gap);
+        mNumColumns = r.getInteger(R.integer.quick_settings_num_columns);
         requestLayout();
     }
 

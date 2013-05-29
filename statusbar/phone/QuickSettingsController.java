@@ -16,39 +16,41 @@
 
 package com.android.systemui.statusbar.phone;
 
-import static com.android.internal.util.jbminiproject.QSConstants.TILES_DEFAULT;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_AIRPLANE;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_AUTOROTATE;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_BATTERY;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_BLUETOOTH;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_BRIGHTNESS;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_DELIMITER;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_EXPANDEDDESKTOP;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_GPS;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_LOCKSCREEN;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_LTE;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_MOBILEDATA;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_NETWORKMODE;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_NFC;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_PROFILE;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_QUIETHOURS;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_RINGER;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_SCREENTIMEOUT;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_SETTINGS;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_SLEEP;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_SYNC;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_TIME;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_TORCH;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_USER;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_VOLUME;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_WIFI;
-import static com.android.internal.util.jbminiproject.QSConstants.TILE_WIFIAP;
-import static com.android.internal.util.jbminiproject.QSUtils.deviceSupportsBluetooth;
-import static com.android.internal.util.jbminiproject.QSUtils.deviceSupportsImeSwitcher;
-import static com.android.internal.util.jbminiproject.QSUtils.deviceSupportsLte;
-import static com.android.internal.util.jbminiproject.QSUtils.deviceSupportsMobileData;
-import static com.android.internal.util.jbminiproject.QSUtils.deviceSupportsUsbTether;
-import static com.android.internal.util.jbminiproject.QSUtils.systemProfilesEnabled;
+import static com.android.internal.util.cm.QSConstants.TILES_DEFAULT;
+import static com.android.internal.util.cm.QSConstants.TILE_AIRPLANE;
+import static com.android.internal.util.cm.QSConstants.TILE_AUTOROTATE;
+import static com.android.internal.util.cm.QSConstants.TILE_BATTERY;
+import static com.android.internal.util.cm.QSConstants.TILE_BLUETOOTH;
+import static com.android.internal.util.cm.QSConstants.TILE_BRIGHTNESS;
+import static com.android.internal.util.cm.QSConstants.TILE_DELIMITER;
+import static com.android.internal.util.cm.QSConstants.TILE_EXPANDEDDESKTOP;
+import static com.android.internal.util.cm.QSConstants.TILE_GPS;
+import static com.android.internal.util.cm.QSConstants.TILE_LOCKSCREEN;
+import static com.android.internal.util.cm.QSConstants.TILE_LTE;
+import static com.android.internal.util.cm.QSConstants.TILE_MOBILEDATA;
+import static com.android.internal.util.cm.QSConstants.TILE_NETWORKMODE;
+import static com.android.internal.util.cm.QSConstants.TILE_NFC;
+import static com.android.internal.util.cm.QSConstants.TILE_PROFILE;
+import static com.android.internal.util.cm.QSConstants.TILE_QUIETHOURS;
+import static com.android.internal.util.cm.QSConstants.TILE_RINGER;
+import static com.android.internal.util.cm.QSConstants.TILE_SCREENTIMEOUT;
+import static com.android.internal.util.cm.QSConstants.TILE_SETTINGS;
+import static com.android.internal.util.cm.QSConstants.TILE_SLEEP;
+import static com.android.internal.util.cm.QSConstants.TILE_SYNC;
+import static com.android.internal.util.cm.QSConstants.TILE_TORCH;
+import static com.android.internal.util.cm.QSConstants.TILE_USER;
+import static com.android.internal.util.cm.QSConstants.TILE_VOLUME;
+import static com.android.internal.util.cm.QSConstants.TILE_WIFI;
+import static com.android.internal.util.cm.QSConstants.TILE_WIFIAP;
+import static com.android.internal.util.cm.QSConstants.TILE_WIMAX;
+import static com.android.internal.util.cm.QSUtils.deviceSupportsBluetooth;
+import static com.android.internal.util.cm.QSUtils.deviceSupportsDockBattery;
+import static com.android.internal.util.cm.QSUtils.deviceSupportsImeSwitcher;
+import static com.android.internal.util.cm.QSUtils.deviceSupportsLte;
+import static com.android.internal.util.cm.QSUtils.deviceSupportsMobileData;
+import static com.android.internal.util.cm.QSUtils.deviceSupportsUsbTether;
+import static com.android.internal.util.cm.QSUtils.expandedDesktopEnabled;
+import static com.android.internal.util.cm.QSUtils.systemProfilesEnabled;
 
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
@@ -57,7 +59,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.ContentObserver;
 import android.net.Uri;
-import android.nfc.NfcAdapter;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.Settings;
@@ -71,6 +72,8 @@ import com.android.systemui.quicksettings.AutoRotateTile;
 import com.android.systemui.quicksettings.BatteryTile;
 import com.android.systemui.quicksettings.BluetoothTile;
 import com.android.systemui.quicksettings.BrightnessTile;
+import com.android.systemui.quicksettings.BugReportTile;
+import com.android.systemui.quicksettings.DockBatteryTile;
 import com.android.systemui.quicksettings.ExpandedDesktopTile;
 import com.android.systemui.quicksettings.GPSTile;
 import com.android.systemui.quicksettings.InputMethodTile;
@@ -86,12 +89,12 @@ import com.android.systemui.quicksettings.RingerModeTile;
 import com.android.systemui.quicksettings.ScreenTimeoutTile;
 import com.android.systemui.quicksettings.SleepScreenTile;
 import com.android.systemui.quicksettings.SyncTile;
-import com.android.systemui.quicksettings.TimeTile;
 import com.android.systemui.quicksettings.ToggleLockscreenTile;
 import com.android.systemui.quicksettings.TorchTile;
 import com.android.systemui.quicksettings.UsbTetherTile;
 import com.android.systemui.quicksettings.UserTile;
 import com.android.systemui.quicksettings.VolumeTile;
+import com.android.systemui.quicksettings.WiFiDisplayTile;
 import com.android.systemui.quicksettings.WiFiTile;
 import com.android.systemui.quicksettings.WifiAPTile;
 
@@ -114,16 +117,18 @@ public class QuickSettingsController {
 
     private final Context mContext;
     private ArrayList<QuickSettingsTile> mQuickSettingsTiles;
+    public PanelBar mBar;
     private final QuickSettingsContainerView mContainerView;
     private final Handler mHandler;
     private BroadcastReceiver mReceiver;
     private ContentObserver mObserver;
+    public PhoneStatusBar mStatusBarService;
 
     private InputMethodTile mIMETile;
 
     private static final int MSG_UPDATE_TILES = 1000;
 
-    public QuickSettingsController(Context context, QuickSettingsContainerView container) {
+    public QuickSettingsController(Context context, QuickSettingsContainerView container, PhoneStatusBar statusBarService) {
         mContext = context;
         mContainerView = container;
         mHandler = new Handler() {
@@ -138,6 +143,7 @@ public class QuickSettingsController {
                 }
             }
         };
+        mStatusBarService = statusBarService;
         mQuickSettingsTiles = new ArrayList<QuickSettingsTile>();
     }
 
@@ -176,20 +182,21 @@ public class QuickSettingsController {
         Log.i(TAG, "Tiles list: " + tiles);
 
         // Split out the tile names and add to the list
+        boolean dockBatteryLoaded = false;
         for (String tile : tiles.split("\\|")) {
             QuickSettingsTile qs = null;
             if (tile.equals(TILE_USER)) {
                 qs = new UserTile(mContext, this);
             } else if (tile.equals(TILE_BATTERY)) {
-                qs = new BatteryTile(mContext, this);
+                qs = new BatteryTile(mContext, this, mStatusBarService.mBatteryController);
             } else if (tile.equals(TILE_SETTINGS)) {
                 qs = new PreferencesTile(mContext, this);
             } else if (tile.equals(TILE_WIFI)) {
-                qs = new WiFiTile(mContext, this);
+                qs = new WiFiTile(mContext, this, mStatusBarService.mNetworkController);
             } else if (tile.equals(TILE_GPS)) {
                 qs = new GPSTile(mContext, this);
             } else if (tile.equals(TILE_BLUETOOTH) && bluetoothSupported) {
-                qs = new BluetoothTile(mContext, this);
+                qs = new BluetoothTile(mContext, this, mStatusBarService.mBluetoothController);
             } else if (tile.equals(TILE_BRIGHTNESS)) {
                 qs = new BrightnessTile(mContext, this, mHandler);
             } else if (tile.equals(TILE_RINGER)) {
@@ -201,15 +208,15 @@ public class QuickSettingsController {
             } else if (tile.equals(TILE_SCREENTIMEOUT)) {
                 qs = new ScreenTimeoutTile(mContext, this);
             } else if (tile.equals(TILE_MOBILEDATA) && mobileDataSupported) {
-                qs = new MobileNetworkTile(mContext, this);
+                qs = new MobileNetworkTile(mContext, this, mStatusBarService.mNetworkController);
             } else if (tile.equals(TILE_LOCKSCREEN)) {
                 qs = new ToggleLockscreenTile(mContext, this);
             } else if (tile.equals(TILE_NETWORKMODE) && mobileDataSupported) {
-                qs = new MobileNetworkTypeTile(mContext, this);
+                qs = new MobileNetworkTypeTile(mContext, this, mStatusBarService.mNetworkController);
             } else if (tile.equals(TILE_AUTOROTATE)) {
                 qs = new AutoRotateTile(mContext, this, mHandler);
             } else if (tile.equals(TILE_AIRPLANE)) {
-                qs = new AirplaneModeTile(mContext, this);
+                qs = new AirplaneModeTile(mContext, this, mStatusBarService.mNetworkController);
             } else if (tile.equals(TILE_TORCH)) {
                 qs = new TorchTile(mContext, this, mHandler);
             } else if (tile.equals(TILE_SLEEP)) {
@@ -223,21 +230,30 @@ public class QuickSettingsController {
                 // User cannot add the NFC tile if the device does not support it
                 // No need to check again here
                 qs = new NfcTile(mContext, this);
+            } else if (tile.equals(TILE_WIMAX)) {
+                // Not available yet
             } else if (tile.equals(TILE_LTE)) {
                 qs = new LteTile(mContext, this);
-            } else if (tile.equals(TILE_TIME)) {
-                qs = new TimeTile(mContext, this);
             } else if (tile.equals(TILE_QUIETHOURS)) {
                 qs = new QuietHoursTile(mContext, this);
             } else if (tile.equals(TILE_VOLUME)) {
                 qs = new VolumeTile(mContext, this, mHandler);
             } else if (tile.equals(TILE_EXPANDEDDESKTOP)) {
-                qs = new ExpandedDesktopTile(mContext, this, mHandler);
+                mTileStatusUris.add(Settings.System.getUriFor(Settings.System.EXPANDED_DESKTOP_STYLE));
+                if (expandedDesktopEnabled(resolver)) {
+                    qs = new ExpandedDesktopTile(mContext, this, mHandler);
+                }
             }
 
             if (qs != null) {
                 qs.setupQuickSettingsTile(inflater, mContainerView);
                 mQuickSettingsTiles.add(qs);
+
+                // Add dock battery beside main battery when possible
+                if (qs instanceof BatteryTile) {
+                    loadDockBatteryTile(resolver, inflater);
+                    dockBatteryLoaded = true;
+                }
             }
         }
 
@@ -246,6 +262,19 @@ public class QuickSettingsController {
         // only when they are needed
         if (Settings.System.getInt(resolver, Settings.System.QS_DYNAMIC_ALARM, 1) == 1) {
             QuickSettingsTile qs = new AlarmTile(mContext, this, mHandler);
+            qs.setupQuickSettingsTile(inflater, mContainerView);
+            mQuickSettingsTiles.add(qs);
+        }
+        if (Settings.System.getInt(resolver, Settings.System.QS_DYNAMIC_BUGREPORT, 1) == 1) {
+            QuickSettingsTile qs = new BugReportTile(mContext, this, mHandler);
+            qs.setupQuickSettingsTile(inflater, mContainerView);
+            mQuickSettingsTiles.add(qs);
+        }
+        if (!dockBatteryLoaded) {
+            loadDockBatteryTile(resolver, inflater);
+        }
+        if (Settings.System.getInt(resolver, Settings.System.QS_DYNAMIC_WIFI, 1) == 1) {
+            QuickSettingsTile qs = new WiFiDisplayTile(mContext, this);
             qs.setupQuickSettingsTile(inflater, mContainerView);
             mQuickSettingsTiles.add(qs);
         }
@@ -261,20 +290,37 @@ public class QuickSettingsController {
         }
     }
 
-    public void setupQuickSettings() {
-        mQuickSettingsTiles.clear();
-        mContainerView.removeAllViews();
-        // Clear out old receiver
+    private void loadDockBatteryTile(final ContentResolver resolver, final LayoutInflater inflater) {
+        if (!deviceSupportsDockBattery(mContext)) {
+            return;
+        }
+        if (Settings.System.getInt(resolver, Settings.System.QS_DYNAMIC_DOCK_BATTERY, 1) == 0) {
+            return;
+        }
+
+        QuickSettingsTile qs = new DockBatteryTile(mContext, this, mStatusBarService.mDockBatteryController);
+        qs.setupQuickSettingsTile(inflater, mContainerView);
+        mQuickSettingsTiles.add(qs);
+    }
+
+    public void shutdown() {
+        if (mObserver != null) {
+            mContext.getContentResolver().unregisterContentObserver(mObserver);
+        }
         if (mReceiver != null) {
             mContext.unregisterReceiver(mReceiver);
         }
+        for (QuickSettingsTile qs : mQuickSettingsTiles) {
+            qs.onDestroy();
+        }
+        mQuickSettingsTiles.clear();
+        mContainerView.removeAllViews();
+    }
+
+    protected void setupQuickSettings() {
+        shutdown();
         mReceiver = new QSBroadcastReceiver();
         mReceiverMap.clear();
-        ContentResolver resolver = mContext.getContentResolver();
-        // Clear out old observer
-        if (mObserver != null) {
-            resolver.unregisterContentObserver(mObserver);
-        }
         mObserver = new QuickSettingsObserver(mHandler);
         mObserverMap.clear();
         mTileStatusUris.clear();
@@ -298,6 +344,7 @@ public class QuickSettingsController {
             super(handler);
         }
 
+        @Override
         public void onChange(boolean selfChange, Uri uri) {
             if (mTileStatusUris.contains(uri)) {
                 mHandler.removeMessages(MSG_UPDATE_TILES);
@@ -352,6 +399,14 @@ public class QuickSettingsController {
         }
     };
 
+    void setBar(PanelBar bar) {
+        mBar = bar;
+    }
+
+    public void setService(PhoneStatusBar phoneStatusBar) {
+        mStatusBarService = phoneStatusBar;
+    }
+
     public void setImeWindowStatus(boolean visible) {
         if (mIMETile != null) {
             mIMETile.toggleVisibility(visible);
@@ -363,10 +418,5 @@ public class QuickSettingsController {
         for (QuickSettingsTile t : mQuickSettingsTiles) {
             t.updateResources();
         }
-/*
-        mContainerView.removeAllViews();
-        setupQuickSettings();
-        mContainerView.requestLayout();
-*/
     }
 }
