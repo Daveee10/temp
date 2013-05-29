@@ -23,7 +23,7 @@
     xmlns:systemui="http://schemas.android.com/apk/res/com.android.systemui"
     android:layout_height="match_parent"
     android:layout_width="match_parent"
-    android:background="@drawable/nav_bar_bg"
+    android:background="#FF000000"
     >
 
     <FrameLayout android:id="@+id/rot0"
@@ -39,7 +39,7 @@
             android:clipToPadding="false"
             android:id="@+id/container"
             >
-            <include layout="@layout/mid_navigation_bar_port"/>
+        <include layout="@layout/mid_navigation_bar_port"/>
         </LinearLayout>
 
         <!-- lights out layout to match exactly -->
@@ -63,8 +63,8 @@
             <View
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:visibility="invisible"
                 android:layout_weight="1"
+                android:visibility="invisible"
                 />
             <ImageView
                 android:layout_width="80dp"
@@ -75,8 +75,8 @@
             <View
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:visibility="invisible"
                 android:layout_weight="1"
+                android:visibility="invisible"
                 />
             <ImageView
                 android:layout_width="80dp"
@@ -98,10 +98,25 @@
                 />
         </LinearLayout>
 
+        <com.android.systemui.statusbar.policy.KeyButtonView
+            android:layout_width="80dp"
+            android:id="@+id/search_light"
+            android:layout_height="match_parent"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/search_light"
+            android:scaleType="center"
+            android:visibility="gone"
+            />
+
         <com.android.systemui.statusbar.policy.DeadZone
             android:id="@+id/deadzone"
-            android:layout_height="@dimen/navigation_bar_deadzone_size"
+            android:layout_height="match_parent"
             android:layout_width="match_parent"
+            systemui:minSize="@dimen/navigation_bar_deadzone_size"
+            systemui:maxSize="@dimen/navigation_bar_deadzone_size_max"
+            systemui:holdTime="@integer/navigation_bar_deadzone_hold"
+            systemui:decayTime="@integer/navigation_bar_deadzone_decay"
+            systemui:orientation="horizontal"
             android:layout_gravity="top"
             />
     </FrameLayout>
@@ -145,10 +160,10 @@
                 android:scaleType="center"
                 />
             <View
-                android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:visibility="invisible"
+                android:layout_width="match_parent"
                 android:layout_weight="1"
+                android:visibility="invisible"
                 />
             <ImageView
                 android:layout_height="80dp"
@@ -157,10 +172,10 @@
                 android:scaleType="center"
                 />
             <View
-                android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:visibility="invisible"
+                android:layout_width="match_parent"
                 android:layout_weight="1"
+                android:visibility="invisible"
                 />
             <ImageView
                 android:layout_height="80dp"
@@ -182,11 +197,26 @@
                 />
         </LinearLayout>
 
+        <com.android.systemui.statusbar.policy.KeyButtonView
+            android:id="@+id/search_light"
+            android:layout_height="80dp"
+            android:layout_width="match_parent"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/search_light"
+            android:scaleType="center"
+            android:visibility="gone"
+            />
+
         <com.android.systemui.statusbar.policy.DeadZone
             android:id="@+id/deadzone"
-            android:layout_width="@dimen/navigation_bar_deadzone_size"
             android:layout_height="match_parent"
-            android:layout_gravity="left"
+            android:layout_width="match_parent"
+            systemui:minSize="@dimen/navigation_bar_deadzone_size"
+            systemui:maxSize="@dimen/navigation_bar_deadzone_size_max"
+            systemui:holdTime="@integer/navigation_bar_deadzone_hold"
+            systemui:decayTime="@integer/navigation_bar_deadzone_decay"
+            systemui:orientation="vertical"
+            android:layout_gravity="top"
             />
     </FrameLayout>
 

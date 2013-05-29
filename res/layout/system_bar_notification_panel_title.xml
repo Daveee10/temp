@@ -37,7 +37,7 @@
         android:layout_marginTop="16dp"
         android:layout_marginBottom="16dp"
         android:shrinkColumns="2,4"
-        android:stretchColumns="8"
+        android:stretchColumns="7"
         >
         <TableRow>
 
@@ -85,7 +85,7 @@
             </FrameLayout>
             <TextView
                 android:id="@+id/mobile_text"
-                style="@style/StatusBarNotificationText"
+                style="@style/SystemBarNotificationText"
                 android:layout_gravity="left|center_vertical"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -121,7 +121,7 @@
             </FrameLayout>
             <TextView
                 android:id="@+id/wifi_text"
-                style="@style/StatusBarNotificationText"
+                style="@style/SystemBarNotificationText"
                 android:layout_gravity="left|center_vertical"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -132,33 +132,11 @@
                 />
 
             <ImageView
-                android:id="@+id/dock_battery"
-                android:layout_height="wrap_content"
-                android:layout_width="wrap_content"
-                android:scaleType="centerInside"
-                android:layout_gravity="left|center_vertical"
-                android:layout_alignBaseline="@id/wifi_signal"
-                android:paddingRight="6dp"
-                android:contentDescription="@null"
-                />
-
-            <TextView
-                android:id="@+id/dock_battery_text"
-                style="@style/StatusBarNotificationText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="left|center_vertical"
-                android:paddingRight="6dp"
-                android:singleLine="true"
-                android:text="@string/status_bar_settings_settings_button"
-                />
-
-            <ImageView
                 android:id="@+id/battery"
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
                 android:scaleType="centerInside"
-                android:layout_gravity="left|center_vertical"
+                android:layout_gravity="center_vertical"
                 android:layout_alignBaseline="@id/wifi_signal"
                 android:paddingRight="6dp"
                 android:contentDescription="@null"
@@ -166,7 +144,7 @@
 
             <TextView
                 android:id="@+id/battery_text"
-                style="@style/StatusBarNotificationText"
+                style="@style/SystemBarNotificationText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="left|center_vertical"
@@ -188,7 +166,6 @@
             <View
                 android:layout_width="0dp"
                 android:layout_height="0dp"
-                android:layout_weight="1"
                 />
 
             <FrameLayout
@@ -202,7 +179,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:src="@drawable/ic_sysbar_quicksettings"
-                    android:contentDescription="@string/accessibility_settings_button"
+                    android:contentDescription="@string/accessibility_desc_quick_settings"
                     />
 
                 <ImageView
@@ -244,7 +221,7 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="8dp"
             android:layout_marginRight="8dp"
-            android:textAppearance="@style/TextAppearance.StatusBar.Expanded.Date"
+            android:textAppearance="@style/TextAppearance.SystemBar.Expanded.Date"
             />
 
         <Space
