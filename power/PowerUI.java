@@ -32,6 +32,7 @@ import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.BatteryManager;
 import android.os.Handler;
+import android.os.UserHandle;
 import android.media.AudioManager;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
@@ -126,8 +127,6 @@ public class PowerUI extends SystemUI {
 
                 final boolean plugged = mPlugType != 0;
                 final boolean oldPlugged = oldPlugType != 0;
-                final boolean charging = mBatteryStatus == BatteryManager.BATTERY_STATUS_CHARGING;
-                final boolean oldCharging = oldBatteryStatus == BatteryManager.BATTERY_STATUS_CHARGING;
 
                 if (mIgnoreFirstPowerEvent && plugged) {
                     mIgnoreFirstPowerEvent = false;
@@ -146,7 +145,6 @@ public class PowerUI extends SystemUI {
                     Slog.d(TAG, "invalidCharger " + oldInvalidCharger + " --> " + mInvalidCharger);
                     Slog.d(TAG, "bucket         " + oldBucket + " --> " + bucket);
                     Slog.d(TAG, "plugged        " + oldPlugged + " --> " + plugged);
-                    Slog.d(TAG, "charging       " + oldCharging + " --> " + charging);
                 }
 
                 if (oldInvalidCharger == 0 && mInvalidCharger != 0) {
@@ -160,17 +158,17 @@ public class PowerUI extends SystemUI {
                     return;
                 }
 
-                if (!charging
-                        && (bucket < oldBucket || oldCharging)
+                if (!plugged
+                        && (bucket < oldBucket || oldPlugged)
                         && mBatteryStatus != BatteryManager.BATTERY_STATUS_UNKNOWN
                         && bucket < 0) {
                     showLowBatteryWarning();
 
                     // only play SFX when the dialog comes up or the bucket changes
-                    if (bucket != oldBucket || oldCharging) {
+                    if (bucket != oldBucket || oldPlugged) {
                         playLowBatterySound();
                     }
-                } else if (charging || (bucket > oldBucket && bucket > 0)) {
+                } else if (plugged || (bucket > oldBucket && bucket > 0)) {
                     dismissLowBatteryWarning();
                 } else if (mBatteryLevelTextView != null) {
                     showLowBatteryWarning();
@@ -182,8 +180,8 @@ public class PowerUI extends SystemUI {
                 if (mIgnoreFirstPowerEvent) {
                     mIgnoreFirstPowerEvent = false;
                 } else {
-                    if (Settings.System.getInt(cr,
-                            Settings.System.POWER_NOTIFICATIONS_ENABLED, 0) == 1) {
+                    if (Settings.Global.getInt(cr,
+                            Settings.Global.POWER_NOTIFICATIONS_ENABLED, 0) == 1) {
                         playPowerNotificationSound();
                     }
                 }
@@ -232,8 +230,9 @@ public class PowerUI extends SystemUI {
             if (intent.resolveActivity(mContext.getPackageManager()) != null) {
                 b.setNegativeButton(R.string.battery_low_why,
                         new DialogInterface.OnClickListener() {
+                    @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        mContext.startActivity(intent);
+                        mContext.startActivityAsUser(intent, UserHandle.CURRENT);
                         dismissLowBatteryWarning();
                     }
                 });
@@ -241,12 +240,15 @@ public class PowerUI extends SystemUI {
 
             AlertDialog d = b.create();
             d.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    @Override
                     public void onDismiss(DialogInterface dialog) {
                         mLowBatteryDialog = null;
                         mBatteryLevelTextView = null;
                     }
                 });
             d.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+            d.getWindow().getAttributes().privateFlags |=
+                    WindowManager.LayoutParams.PRIVATE_FLAG_SHOW_FOR_ALL_USERS;
             d.show();
             mLowBatteryDialog = d;
         }
@@ -258,9 +260,9 @@ public class PowerUI extends SystemUI {
         }
 
         final ContentResolver cr = mContext.getContentResolver();
-        if (Settings.System.getInt(cr, Settings.System.POWER_SOUNDS_ENABLED, 1) == 1) {
-            final String soundPath = Settings.System.getString(cr,
-                    Settings.System.LOW_BATTERY_SOUND);
+        if (Settings.Global.getInt(cr, Settings.Global.POWER_SOUNDS_ENABLED, 1) == 1) {
+            final String soundPath = Settings.Global.getString(cr,
+                    Settings.Global.LOW_BATTERY_SOUND);
             if (soundPath != null) {
                 final Uri soundUri = Uri.parse("file://" + soundPath);
                 if (soundUri != null) {
@@ -307,7 +309,7 @@ public class PowerUI extends SystemUI {
     void playPowerNotificationSound() {
         final ContentResolver cr = mContext.getContentResolver();
         final String soundPath =
-                Settings.System.getString(cr, Settings.System.POWER_NOTIFICATIONS_RINGTONE);
+                Settings.Global.getString(cr, Settings.Global.POWER_NOTIFICATIONS_RINGTONE);
 
         NotificationManager notificationManager =
                 (NotificationManager)mContext.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -324,14 +326,14 @@ public class PowerUI extends SystemUI {
                 powerNotify.defaults &= ~Notification.DEFAULT_SOUND;
             }
         }
-        if (Settings.System.getInt(cr,
-                Settings.System.POWER_NOTIFICATIONS_VIBRATE, 0) == 0) {
+        if (Settings.Global.getInt(cr,
+                Settings.Global.POWER_NOTIFICATIONS_VIBRATE, 0) == 0) {
             powerNotify.defaults &= ~Notification.DEFAULT_VIBRATE;
         }
 
         notificationManager.notify(0, powerNotify);
     }
-
+    
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
         pw.print("mLowBatteryAlertCloseLevel=");
         pw.println(mLowBatteryAlertCloseLevel);
