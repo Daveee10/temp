@@ -22,11 +22,11 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.location.LocationManager;
+import android.os.UserHandle;
 import android.provider.Settings;
 import android.util.Slog;
 import android.view.View;
@@ -94,13 +94,14 @@ public class LocationController extends BroadcastReceiver {
             textResId = R.string.gps_notification_searching_text;
             visible = true;
         }
-
+        
         try {
             if (visible) {
                 Intent gpsIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
                 gpsIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-                PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, gpsIntent, 0);
+                PendingIntent pendingIntent = PendingIntent.getActivityAsUser(context, 0,
+                        gpsIntent, 0, null, UserHandle.CURRENT);
                 String text = mContext.getText(textResId).toString();
 
                 Notification n = new Notification.Builder(mContext)
@@ -113,24 +114,25 @@ public class LocationController extends BroadcastReceiver {
                 // Notification.Builder will helpfully fill these out for you no matter what you do
                 n.tickerView = null;
                 n.tickerText = null;
-
+                
                 n.priority = Notification.PRIORITY_HIGH;
 
                 int[] idOut = new int[1];
                 mNotificationService.enqueueNotificationWithTag(
                         mContext.getPackageName(),
-                        null,
-                        GPS_NOTIFICATION_ID,
+                        null, 
+                        GPS_NOTIFICATION_ID, 
                         n,
-                        idOut);
+                        idOut,
+                        UserHandle.USER_ALL);
 
                 for (LocationGpsStateChangeCallback cb : mChangeCallbacks) {
                     cb.onLocationGpsStateChanged(true, text);
                 }
             } else {
-                mNotificationService.cancelNotification(
-                        mContext.getPackageName(),
-                        GPS_NOTIFICATION_ID);
+                mNotificationService.cancelNotificationWithTag(
+                        mContext.getPackageName(), null,
+                        GPS_NOTIFICATION_ID, UserHandle.USER_ALL);
 
                 for (LocationGpsStateChangeCallback cb : mChangeCallbacks) {
                     cb.onLocationGpsStateChanged(false, null);
@@ -141,3 +143,4 @@ public class LocationController extends BroadcastReceiver {
         }
     }
 }
+

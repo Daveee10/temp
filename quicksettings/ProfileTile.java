@@ -115,7 +115,7 @@ public class ProfileTile extends QuickSettingsTile {
                         dialog.cancel();
                     }
                 }).create();
-        startCollapseActivity();
+        mStatusbarService.animateCollapsePanels();
         dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_DIALOG);
         dialog.show();
     }

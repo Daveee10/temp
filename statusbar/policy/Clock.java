@@ -19,16 +19,12 @@ package com.android.systemui.statusbar.policy;
 import android.app.ActivityManagerNative;
 import android.app.StatusBarManager;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.res.Resources;
-import android.content.res.TypedArray;
 import android.database.ContentObserver;
-import android.graphics.Canvas;
-import android.graphics.Typeface;
-import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.provider.AlarmClock;
 import android.provider.Settings;
@@ -36,46 +32,36 @@ import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.format.DateFormat;
 import android.text.style.CharacterStyle;
-import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
-import android.text.style.RelativeSizeSpan;
-import android.text.style.StyleSpan;
 import android.util.AttributeSet;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
 import android.widget.TextView;
 
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.TimeZone;
-
 import com.android.internal.R;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
+import java.util.TimeZone;
+
 /**
- * This widget display an analogic clock with two hands for hours and
- * minutes.
+ * Digital clock for the status bar.
  */
 public class Clock extends TextView implements OnClickListener, OnLongClickListener {
     private boolean mAttached;
     private Calendar mCalendar;
     private String mClockFormatString;
     private SimpleDateFormat mClockFormat;
+    private Locale mLocale;
+    private SettingsObserver mObserver;
 
     private static final int AM_PM_STYLE_NORMAL  = 0;
     private static final int AM_PM_STYLE_SMALL   = 1;
     private static final int AM_PM_STYLE_GONE    = 2;
 
-    private static int AM_PM_STYLE = AM_PM_STYLE_GONE;
-
-    public static final int WEEKDAY_STYLE_GONE    = 0;
-    public static final int WEEKDAY_STYLE_SMALL   = 1;
-    public static final int WEEKDAY_STYLE_NORMAL  = 2;
-
-    protected int mWeekday = WEEKDAY_STYLE_GONE;
-
-    private int mAmPmStyle;
+    private int mAmPmStyle = AM_PM_STYLE_GONE;
     private boolean mShowClock;
 
     Handler mHandler;
@@ -90,19 +76,17 @@ public class Clock extends TextView implements OnClickListener, OnLongClickListe
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.STATUS_BAR_AM_PM), false, this);
             resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.STATUSBAR_CLOCK_COLOR), false, this);
-            resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.STATUS_BAR_CLOCK), false, this);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.STATUSBAR_CLOCK_WEEKDAY), false, this);
+        }
+
+        void unobserve() {
+            mContext.getContentResolver().unregisterContentObserver(this);
         }
 
         @Override public void onChange(boolean selfChange) {
             updateSettings();
         }
     }
-
-    protected int mClockColor = com.android.internal.R.color.holo_blue_light;
 
     public Clock(Context context) {
         this(context, null);
@@ -116,9 +100,8 @@ public class Clock extends TextView implements OnClickListener, OnLongClickListe
         super(context, attrs, defStyle);
 
         mHandler = new Handler();
-        SettingsObserver settingsObserver = new SettingsObserver(mHandler);
-        settingsObserver.observe();
-        if(isClickable()){
+        mObserver = new SettingsObserver(mHandler);
+        if (isClickable()) {
             setOnClickListener(this);
             setOnLongClickListener(this);
         }
@@ -137,8 +120,10 @@ public class Clock extends TextView implements OnClickListener, OnLongClickListe
             filter.addAction(Intent.ACTION_TIME_CHANGED);
             filter.addAction(Intent.ACTION_TIMEZONE_CHANGED);
             filter.addAction(Intent.ACTION_CONFIGURATION_CHANGED);
+            filter.addAction(Intent.ACTION_USER_SWITCHED);
 
             getContext().registerReceiver(mIntentReceiver, filter, null, getHandler());
+            mObserver.observe();
         }
 
         // NOTE: It's safe to do these after registering the receiver since the receiver always runs
@@ -156,6 +141,7 @@ public class Clock extends TextView implements OnClickListener, OnLongClickListe
         super.onDetachedFromWindow();
         if (mAttached) {
             getContext().unregisterReceiver(mIntentReceiver);
+            mObserver.unobserve();
             mAttached = false;
         }
     }
@@ -169,6 +155,12 @@ public class Clock extends TextView implements OnClickListener, OnLongClickListe
                 mCalendar = Calendar.getInstance(TimeZone.getTimeZone(tz));
                 if (mClockFormat != null) {
                     mClockFormat.setTimeZone(mCalendar.getTimeZone());
+                }
+            } else if (action.equals(Intent.ACTION_CONFIGURATION_CHANGED)) {
+                final Locale newLocale = getResources().getConfiguration().locale;
+                if (! newLocale.equals(mLocale)) {
+                    mLocale = newLocale;
+                    mClockFormatString = ""; // force refresh
                 }
             }
             updateClock();
@@ -193,8 +185,6 @@ public class Clock extends TextView implements OnClickListener, OnLongClickListe
 
         final char MAGIC1 = '\uEF00';
         final char MAGIC2 = '\uEF01';
-        final char MAGIC3 = '\uEF02';
-        final char MAGIC4 = '\uEF03';
 
         SimpleDateFormat sdf;
         String format = context.getString(res);
@@ -204,7 +194,7 @@ public class Clock extends TextView implements OnClickListener, OnLongClickListe
              * add dummy characters around it to let us find it again after
              * formatting and change its size.
              */
-            if (AM_PM_STYLE != AM_PM_STYLE_NORMAL) {
+            if (mAmPmStyle != AM_PM_STYLE_NORMAL) {
                 int a = -1;
                 boolean quoted = false;
                 for (int i = 0; i < format.length(); i++) {
@@ -228,36 +218,23 @@ public class Clock extends TextView implements OnClickListener, OnLongClickListe
                     format = format.substring(0, a) + MAGIC1 + format.substring(a, b)
                         + "a" + MAGIC2 + format.substring(b + 1);
                 }
-                mClockFormat = new SimpleDateFormat(format);
             }
-
             mClockFormat = sdf = new SimpleDateFormat(format);
             mClockFormatString = format;
         } else {
             sdf = mClockFormat;
         }
-
-        Calendar calendar = Calendar.getInstance();
-        int day = calendar.get(Calendar.DAY_OF_WEEK);
-        String todayIs = null;
-
         String result = sdf.format(mCalendar.getTime());
 
-        if (mWeekday != WEEKDAY_STYLE_GONE) {
-            todayIs = whatDay(day);
-            result = todayIs + result;
-        }
-
-        SpannableStringBuilder formatted = new SpannableStringBuilder(result);
-
-        if (AM_PM_STYLE != AM_PM_STYLE_NORMAL) {
+        if (mAmPmStyle != AM_PM_STYLE_NORMAL) {
             int magic1 = result.indexOf(MAGIC1);
             int magic2 = result.indexOf(MAGIC2);
             if (magic1 >= 0 && magic2 > magic1) {
-                if (AM_PM_STYLE == AM_PM_STYLE_GONE) {
+                SpannableStringBuilder formatted = new SpannableStringBuilder(result);
+                if (mAmPmStyle == AM_PM_STYLE_GONE) {
                     formatted.delete(magic1, magic2+1);
                 } else {
-                    if (AM_PM_STYLE == AM_PM_STYLE_SMALL) {
+                    if (mAmPmStyle == AM_PM_STYLE_SMALL) {
                         CharacterStyle style = new RelativeSizeSpan(0.7f);
                         formatted.setSpan(style, magic1, magic2,
                                           Spannable.SPAN_EXCLUSIVE_INCLUSIVE);
@@ -265,62 +242,22 @@ public class Clock extends TextView implements OnClickListener, OnLongClickListe
                     formatted.delete(magic2, magic2 + 1);
                     formatted.delete(magic1, magic1 + 1);
                 }
+                return formatted;
             }
         }
 
-        if (mWeekday != WEEKDAY_STYLE_NORMAL) {
-            if (todayIs != null) {
-                if (mWeekday == WEEKDAY_STYLE_GONE) {
-                    formatted.delete(0,4);
-                } else {
-                    if (mWeekday == WEEKDAY_STYLE_SMALL) {
-                        CharacterStyle style = new RelativeSizeSpan(0.7f);
-                        formatted.setSpan(style, 0, 3, Spannable.SPAN_EXCLUSIVE_INCLUSIVE);
-                    }
-                }
-            }
-        }
-        return formatted;
-    }
+        return result;
 
-    private String whatDay(int today) {
-        String todayIs = null;
-        switch (today) {
-            case 1:
-                todayIs = "Sun ";
-                break;
-            case 2:
-                todayIs = "Mon ";
-                break;
-            case 3:
-                todayIs = "Tue ";
-                break;
-            case 4:
-                todayIs = "Wed ";
-                break;
-            case 5:
-                todayIs = "Thu ";
-                break;
-            case 6:
-                todayIs = "Fri ";
-                break;
-            case 7:
-                todayIs = "Sat ";
-                break;
-        }
-        return todayIs;
     }
 
     private void updateSettings(){
         ContentResolver resolver = mContext.getContentResolver();
-        int defaultColor = getResources().getColor(
-                com.android.internal.R.color.holo_blue_light);
 
-        mAmPmStyle = (Settings.System.getInt(resolver,
+        int amPmStyle = (Settings.System.getInt(resolver,
                 Settings.System.STATUS_BAR_AM_PM, 2));
 
-        if (mAmPmStyle != AM_PM_STYLE) {
-            AM_PM_STYLE = mAmPmStyle;
+        if (mAmPmStyle != amPmStyle) {
+            mAmPmStyle = amPmStyle;
             mClockFormatString = "";
 
             if (mAttached) {
@@ -335,25 +272,13 @@ public class Clock extends TextView implements OnClickListener, OnLongClickListe
             setVisibility(View.VISIBLE);
         else
             setVisibility(View.GONE);
-
-        mClockColor = Settings.System.getInt(resolver,
-                Settings.System.STATUSBAR_CLOCK_COLOR, defaultColor);
-
-        if (mClockColor == Integer.MIN_VALUE) {
-            mClockColor = defaultColor;
-        }
-
-        setTextColor(mClockColor);
-
-        mWeekday = Settings.System.getInt(resolver,
-                Settings.System.STATUSBAR_CLOCK_WEEKDAY, 0);
     }
 
     private void collapseStartActivity(Intent what) {
         // collapse status bar
         StatusBarManager statusBarManager = (StatusBarManager) getContext().getSystemService(
                 Context.STATUS_BAR_SERVICE);
-        statusBarManager.collapse();
+        statusBarManager.collapsePanels();
 
         // dismiss keyguard in case it was active and no passcode set
         try {
@@ -369,14 +294,17 @@ public class Clock extends TextView implements OnClickListener, OnLongClickListe
 
     @Override
     public void onClick(View v) {
-        Intent intent = new Intent(AlarmClock.ACTION_SET_ALARM);
+        // start com.android.deskclock/.DeskClock
+        ComponentName clock = new ComponentName("com.android.deskclock",
+                "com.android.deskclock.DeskClock");
+        Intent intent = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+                .setComponent(clock);
         collapseStartActivity(intent);
     }
 
     @Override
     public boolean onLongClick(View v) {
-        Intent intent = new Intent("android.settings.DATE_SETTINGS");
-        intent.addCategory(Intent.CATEGORY_DEFAULT);
+        Intent intent = new Intent(AlarmClock.ACTION_SET_ALARM);
         collapseStartActivity(intent);
 
         // consume event

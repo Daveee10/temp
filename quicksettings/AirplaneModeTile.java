@@ -26,7 +26,7 @@ public class AirplaneModeTile extends QuickSettingsTile implements NetworkSignal
             @Override
             public void onClick(View v) {
                 // Change the system setting
-                Settings.System.putInt(mContext.getContentResolver(), Settings.System.AIRPLANE_MODE_ON,
+                Settings.Global.putInt(mContext.getContentResolver(), Settings.Global.AIRPLANE_MODE_ON,
                                         !enabled ? 1 : 0);
 
                 // Post the intent

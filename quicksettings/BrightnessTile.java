@@ -8,6 +8,7 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.RemoteException;
 import android.provider.Settings;
+import android.provider.Settings.SettingNotFoundException;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,6 +16,7 @@ import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.WindowManagerGlobal;
 import android.widget.ImageView;
 
 import com.android.systemui.R;
@@ -42,7 +44,7 @@ public class BrightnessTile extends QuickSettingsTile implements BrightnessState
 
             @Override
             public void onClick(View v) {
-                startCollapseActivity();
+                qsc.mBar.collapseAllPanels(true);
                 showBrightnessDialog();
             }
         };
@@ -74,9 +76,16 @@ public class BrightnessTile extends QuickSettingsTile implements BrightnessState
                     (ToggleSlider) mBrightnessDialog.findViewById(R.id.brightness_slider));
 
             mBrightnessDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+            mBrightnessDialog.getWindow().getAttributes().privateFlags |=
+                    WindowManager.LayoutParams.PRIVATE_FLAG_SHOW_FOR_ALL_USERS;
             mBrightnessDialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
         }
         if (!mBrightnessDialog.isShowing()) {
+            try {
+                WindowManagerGlobal.getWindowManagerService().dismissKeyguard();
+            } catch (RemoteException e) {
+                // Do nothing here
+            }
             mBrightnessDialog.show();
             dismissBrightnessDialog(mBrightnessDialogLongTimeout);
         }
@@ -119,14 +128,18 @@ public class BrightnessTile extends QuickSettingsTile implements BrightnessState
 
     private synchronized void updateTile() {
         int mode;
-        mode = Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.SCREEN_BRIGHTNESS_MODE,
-                Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
-        boolean autoBrightness = (mode == Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC);
-        mDrawable = autoBrightness
-                ? R.drawable.ic_qs_brightness_auto_on
-                : R.drawable.ic_qs_brightness_auto_off;
-        mLabel = mContext.getString(R.string.quick_settings_brightness_label);
+        try {
+            mode = Settings.System.getIntForUser(mContext.getContentResolver(),
+                    Settings.System.SCREEN_BRIGHTNESS_MODE,
+                    Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
+            boolean autoBrightness = (mode == Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC);
+            mDrawable = autoBrightness
+                    ? R.drawable.ic_qs_brightness_auto_on
+                    : R.drawable.ic_qs_brightness_auto_off;
+            mLabel = mContext.getString(R.string.quick_settings_brightness_label);
+        } catch (SettingNotFoundException e) {
+            Log.e(TAG, "Brightness setting not found", e);
+        }
     }
 
     @Override

@@ -43,6 +43,7 @@ public class BrightnessController implements ToggleSlider.Listener {
     private final ToggleSlider mControl;
     private final boolean mAutomaticAvailable;
     private final IPowerManager mPower;
+    private final CurrentUserTracker mUserTracker;
 
     private ArrayList<BrightnessStateChangeCallback> mChangeCallbacks =
             new ArrayList<BrightnessStateChangeCallback>();
@@ -55,10 +56,11 @@ public class BrightnessController implements ToggleSlider.Listener {
         mContext = context;
         mIcon = icon;
         mControl = control;
+        mUserTracker = new CurrentUserTracker(mContext);
 
         PowerManager pm = (PowerManager)context.getSystemService(Context.POWER_SERVICE);
-        mMinimumBacklight = pm.BRIGHTNESS_DIM + 8;
-        mMaximumBacklight = pm.BRIGHTNESS_ON;
+        mMinimumBacklight = pm.getMinimumScreenBrightnessSetting();
+        mMaximumBacklight = pm.getMaximumScreenBrightnessSetting();
 
         mAutomaticAvailable = context.getResources().getBoolean(
                 com.android.internal.R.bool.config_automatic_brightness_available);
@@ -76,8 +78,9 @@ public class BrightnessController implements ToggleSlider.Listener {
         if (mAutomaticAvailable) {
             int automatic;
             try {
-                automatic = Settings.System.getInt(mContext.getContentResolver(),
-                        Settings.System.SCREEN_BRIGHTNESS_MODE);
+                automatic = Settings.System.getIntForUser(mContext.getContentResolver(),
+                        Settings.System.SCREEN_BRIGHTNESS_MODE,
+                        mUserTracker.getCurrentUserId());
             } catch (SettingNotFoundException snfe) {
                 automatic = 0;
             }
@@ -88,11 +91,12 @@ public class BrightnessController implements ToggleSlider.Listener {
             updateIcon(false /*automatic*/);
             //control.hideToggle();
         }
-
+        
         int value;
         try {
-            value = Settings.System.getInt(mContext.getContentResolver(),
-                    Settings.System.SCREEN_BRIGHTNESS);
+            value = Settings.System.getIntForUser(mContext.getContentResolver(),
+                    Settings.System.SCREEN_BRIGHTNESS,
+                    mUserTracker.getCurrentUserId());
         } catch (SettingNotFoundException ex) {
             value = mMaximumBacklight;
         }
@@ -111,8 +115,9 @@ public class BrightnessController implements ToggleSlider.Listener {
             if (!tracking) {
                 AsyncTask.execute(new Runnable() {
                         public void run() {
-                            Settings.System.putInt(mContext.getContentResolver(),
-                                    Settings.System.SCREEN_BRIGHTNESS, val);
+                            Settings.System.putIntForUser(mContext.getContentResolver(),
+                                    Settings.System.SCREEN_BRIGHTNESS, val,
+                                    mUserTracker.getCurrentUserId());
                         }
                     });
             }
@@ -124,15 +129,16 @@ public class BrightnessController implements ToggleSlider.Listener {
     }
 
     private void setMode(int mode) {
-        Settings.System.putInt(mContext.getContentResolver(),
-                Settings.System.SCREEN_BRIGHTNESS_MODE, mode);
+        Settings.System.putIntForUser(mContext.getContentResolver(),
+                Settings.System.SCREEN_BRIGHTNESS_MODE, mode,
+                mUserTracker.getCurrentUserId());
     }
-
+    
     private void setBrightness(int brightness) {
         try {
-            mPower.setBacklightBrightness(brightness);
+            mPower.setTemporaryScreenBrightnessSettingOverride(brightness);
         } catch (RemoteException ex) {
-        }
+        }        
     }
 
     private void updateIcon(boolean automatic) {

@@ -64,7 +64,7 @@ public class WiFiTile extends QuickSettingsTile implements NetworkSignalChangedC
     private synchronized void updateTile() {
         if (mWifiConnected) {
             mDrawable = mWifiSignalIconId;
-            mLabel = mDescription;
+            mLabel = mDescription.substring(1, mDescription.length()-1);
         } else if (mWifiNotConnected) {
             mDrawable = R.drawable.ic_qs_wifi_0;
             mLabel = mContext.getString(R.string.quick_settings_wifi_label);

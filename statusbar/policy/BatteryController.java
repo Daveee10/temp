@@ -53,12 +53,13 @@ public class BatteryController extends BroadcastReceiver {
     public static final int BATTERY_STYLE_CIRCLE_PERCENT = 3;
     public static final int BATTERY_STYLE_GONE           = 4;
 
+
     private static final int BATTERY_TEXT_STYLE_NORMAL  = R.string.status_bar_settings_battery_meter_format;
     private static final int BATTERY_TEXT_STYLE_MIN     = R.string.status_bar_settings_battery_meter_min_format;
 
     private boolean mBatteryPlugged = false;
-    private int mBatteryStyle;
     private int mBatteryStatus = BatteryManager.BATTERY_STATUS_UNKNOWN;
+    private int mBatteryStyle;
 
     Handler mHandler;
 
@@ -82,7 +83,6 @@ public class BatteryController extends BroadcastReceiver {
 
     private ArrayList<BatteryStateChangeCallback> mChangeCallbacks =
             new ArrayList<BatteryStateChangeCallback>();
-
 
     public interface BatteryStateChangeCallback {
         public void onBatteryLevelChanged(int level, boolean pluggedIn);
@@ -202,7 +202,7 @@ public class BatteryController extends BroadcastReceiver {
         }
 
         for (BatteryStateChangeCallback cb : mChangeCallbacks) {
-            cb.onBatteryLevelChanged(level, mBatteryPlugged);
+            cb.onBatteryLevelChanged(level, isBatteryStatusCharging());
         }
     }
 

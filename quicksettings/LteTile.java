@@ -45,7 +45,7 @@ public class LteTile extends QuickSettingsTile {
             }
         };
 
-        qsc.registerObservedContent(Settings.Secure.getUriFor(Settings.Secure.PREFERRED_NETWORK_MODE), this);
+        qsc.registerObservedContent(Settings.Global.getUriFor(Settings.Global.PREFERRED_NETWORK_MODE), this);
     }
 
     @Override
@@ -69,10 +69,11 @@ public class LteTile extends QuickSettingsTile {
         int network = getCurrentPreferredNetworkMode(mContext);
         switch(network) {
             case Phone.NT_MODE_GLOBAL:
-            case Phone.NT_MODE_LTE_CDMA_EVDO:
+            case Phone.NT_MODE_LTE_CDMA_AND_EVDO:
             case Phone.NT_MODE_LTE_GSM_WCDMA:
             case Phone.NT_MODE_LTE_CMDA_EVDO_GSM_WCDMA:
             case Phone.NT_MODE_LTE_ONLY:
+            case Phone.NT_MODE_LTE_WCDMA:
                 mDrawable = R.drawable.ic_qs_lte_on;
                 mLabel = mContext.getString(R.string.quick_settings_lte);
                 break;
@@ -89,10 +90,11 @@ public class LteTile extends QuickSettingsTile {
         int network = getCurrentPreferredNetworkMode(mContext);
         switch(network) {
             case Phone.NT_MODE_GLOBAL:
-            case Phone.NT_MODE_LTE_CDMA_EVDO:
+            case Phone.NT_MODE_LTE_CDMA_AND_EVDO:
             case Phone.NT_MODE_LTE_GSM_WCDMA:
             case Phone.NT_MODE_LTE_CMDA_EVDO_GSM_WCDMA:
             case Phone.NT_MODE_LTE_ONLY:
+            case Phone.NT_MODE_LTE_WCDMA:
                 tm.toggleLTE(false);
                 break;
             default:
@@ -102,8 +104,8 @@ public class LteTile extends QuickSettingsTile {
     }
 
     private static int getCurrentPreferredNetworkMode(Context context) {
-        int network = Settings.Secure.getInt(context.getContentResolver(),
-                    Settings.Secure.PREFERRED_NETWORK_MODE, -1);
+        int network = Settings.Global.getInt(context.getContentResolver(),
+                    Settings.Global.PREFERRED_NETWORK_MODE, -1);
         return network;
     }
 }
