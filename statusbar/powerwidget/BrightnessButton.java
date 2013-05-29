@@ -1,7 +1,7 @@
 
 package com.android.systemui.statusbar.powerwidget;
 
-import com.android.server.PowerManagerService;
+import com.android.server.power.PowerManagerService;
 import com.android.systemui.R;
 
 import android.content.ContentResolver;
@@ -12,14 +12,10 @@ import android.os.IPowerManager;
 import android.os.PowerManager;
 import android.os.RemoteException;
 import android.os.ServiceManager;
-import android.os.SystemProperties;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,7 +27,7 @@ public class BrightnessButton extends PowerButton {
      * Minimum and maximum brightnesses. Don't go to 0 since that makes the
      * display unusable
      */
-    private static final int MIN_BACKLIGHT = PowerManager.BRIGHTNESS_DIM + 10;
+    private static final int MIN_BACKLIGHT = (PowerManager.BRIGHTNESS_ON/10) + 5;
     private static final int MAX_BACKLIGHT = PowerManager.BRIGHTNESS_ON;
 
     // Auto-backlight level
@@ -55,8 +51,6 @@ public class BrightnessButton extends PowerButton {
     static {
         OBSERVED_URIS.add(BRIGHTNESS_URI);
         OBSERVED_URIS.add(BRIGHTNESS_MODE_URI);
-        OBSERVED_URIS.add(Settings.System.getUriFor(Settings.System.LIGHT_SENSOR_CUSTOM));
-        OBSERVED_URIS.add(Settings.System.getUriFor(Settings.System.LIGHT_SCREEN_DIM));
         OBSERVED_URIS.add(Settings.System.getUriFor(Settings.System.EXPANDED_BRIGHTNESS_MODE));
     }
 
@@ -114,25 +108,7 @@ public class BrightnessButton extends PowerButton {
             mCurrentBacklightIndex = 0;
         }
 
-        File f = new File("/sys/devices/platform/i2c-adapter/i2c-0/0-0036/mode");
-        String modeFile = "";
-
-        if (f.isFile() && f.canRead())
-            modeFile = "/sys/devices/platform/i2c-adapter/i2c-0/0-0036/mode";
-        else
-            modeFile = "/sys/devices/i2c-0/0-0036/mode";
-
         int backlightIndex = mBacklightValues[mCurrentBacklightIndex];
-        if (backlightIndex > BACKLIGHTS.length - 1) {
-            writeOneLine(modeFile, "i2c_pwm");
-            Settings.System.putInt(resolver, Settings.System.SCREEN_RAISED_BRIGHTNESS, 1);
-            backlightIndex = BACKLIGHTS.length - 1;
-        }
-        else if (backlightIndex == 1) {
-            writeOneLine(modeFile, "i2c_pwm_als");
-            Settings.System.putInt(resolver, Settings.System.SCREEN_RAISED_BRIGHTNESS, 0);
-        }
-
         int brightness = BACKLIGHTS[backlightIndex];
 
         if (brightness == AUTO_BACKLIGHT) {
@@ -178,15 +154,6 @@ public class BrightnessButton extends PowerButton {
     }
 
     private void updateSettings(ContentResolver resolver) {
-        boolean lightSensorCustom = (Settings.System.getInt(resolver,
-                Settings.System.LIGHT_SENSOR_CUSTOM, 0) != 0);
-        if (lightSensorCustom) {
-            BACKLIGHTS[1] = Settings.System.getInt(resolver, Settings.System.LIGHT_SCREEN_DIM,
-                    MIN_BACKLIGHT);
-        } else {
-            BACKLIGHTS[1] = MIN_BACKLIGHT;
-        }
-
         String[] modes = parseStoredValue(Settings.System.getString(
                 resolver, Settings.System.EXPANDED_BRIGHTNESS_MODE));
         if (modes == null || modes.length == 0) {
@@ -214,21 +181,5 @@ public class BrightnessButton extends PowerButton {
                 }
             }
         }
-    }
-
-    public static boolean writeOneLine(String fname, String value) {
-        try {
-            FileWriter fw = new FileWriter(fname);
-            try {
-                fw.write(value);
-            } finally {
-                fw.close();
-            }
-        } catch (IOException e) {
-            String Error = "Error writing to " + fname + ". Exception: ";
-            Log.e(TAG, Error, e);
-            return false;
-        }
-        return true;
     }
 }
