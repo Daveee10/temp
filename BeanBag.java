@@ -24,6 +24,7 @@ import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.Bitmap;
@@ -40,6 +41,7 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.provider.Settings;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Pair;
@@ -135,6 +137,28 @@ public class BeanBag extends Activity {
             0xFF333333,
         };
 
+        static int CIDS[] = {
+            R.drawable.cid_angry,
+            R.drawable.cid_angry,
+            R.drawable.cid_angry,
+            R.drawable.cid_angry,
+            R.drawable.cid_normal,
+            R.drawable.cid_normal,
+            R.drawable.cid_confused,
+        };
+
+        static int CIDCOLORS[] = {
+            0xFF0099CC,
+            0xFF33B5E5,
+            0xFF669900,
+            0xFF99CC00,
+            0xFFCC0000,
+            0xFFFF8800,
+            0xFFFFBB33,
+            0xFF9933CC,
+            0xFFAA66CC,
+        };
+
         public class Bean extends ImageView {
             public static final float VMAX = 1000.0f;
             public static final float VMIN = 100.0f;
@@ -165,7 +189,7 @@ public class BeanBag extends Activity {
             }
 
             private void pickBean() {
-                int beanId = pickInt(BEANS);
+                int beanId = pickInt(mIsCid ? CIDS : BEANS);
                 if (randfrange(0,1) <= LUCKY) {
                     beanId = R.drawable.jandycane;
                 }
@@ -180,7 +204,7 @@ public class BeanBag extends Activity {
                 this.setImageDrawable(bean);
 
                 Paint pt = new Paint();
-                final int color = pickInt(COLORS);
+                final int color = pickInt(mIsCid ? CIDCOLORS : COLORS);
                 ColorMatrix CM = new ColorMatrix();
                 float[] M = CM.getArray();
                 // we assume the color information is in the red channel
@@ -264,10 +288,11 @@ public class BeanBag extends Activity {
         TimeAnimator mAnim;
         private int boardWidth;
         private int boardHeight;
+        private boolean mIsCid;
 
-        public Board(Context context, AttributeSet as) {
+        public Board(Context context, AttributeSet as, boolean isCid) {
             super(context, as);
-
+            mIsCid = isCid;
             setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE);
 
             setWillNotDraw(!DEBUG);
@@ -402,11 +427,16 @@ public class BeanBag extends Activity {
     public void onStart() {
         super.onStart();
 
+        // ACHIEVEMENT UNLOCKED
+        PackageManager pm = getPackageManager();
+        pm.setComponentEnabledSetting(new ComponentName(this, BeanBagDream.class),
+                PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 0);
+
         getWindow().addFlags(
                   WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
                 | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
                 );
-        mBoard = new Board(this, null);
+        mBoard = new Board(this, null,  getIntent().getBooleanExtra("is_cid", false));
         setContentView(mBoard);
     }
 
